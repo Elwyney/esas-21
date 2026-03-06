@@ -1,10 +1,32 @@
 import './App.css'
 import CountUp from 'react-countup';
 import esasLogo from './assets/esas-logo.png';
+import { useEffect, useState } from 'react';
 
-const successRate = 211;
+const API_STATE = 'http://localhost:3001/api/state';
+const POLL_MS = 5000;
+
+const initialState = { docsTotal: 0, signedCount: 0, unsignedCount: 0, botActivityRate: 0, successRate: 0 };
 
 function App() {
+  const [state, setState] = useState(initialState);
+
+  const successRate = state.docsTotal > 0
+    ? Math.round((state.signedCount / state.docsTotal) * 100)
+    : 0;
+
+  useEffect(() => {
+    const fetchState = async () => {
+      try {
+        const res = await fetch(API_STATE);
+        if (res.ok) setState(await res.json());
+      } catch (_) { }
+    };
+    fetchState();
+    const id = setInterval(fetchState, POLL_MS);
+    return () => clearInterval(id);
+  }, [])
+
   return (
     <div className='container'>
       <header>
@@ -17,7 +39,7 @@ function App() {
           </svg>
           <span className='title'>Успеваимость</span>
         </div>
-        <CountUp className='count' end={successRate} duration={2} separator=" " prefix="≈ " suffix="%" enableScrollSpy scrollSpyOnce={false} />
+        <CountUp key={successRate} className='count' end={successRate} duration={1.5} separator=" " suffix="%" />
       </div>
       {/*  */}
       <div className='wrap'>
@@ -28,7 +50,7 @@ function App() {
             </svg>
             <span className='title'>Всего документов</span>
           </div>
-          <CountUp className='count' end={51431} duration={2} separator=" " prefix="≈ " enableScrollSpy scrollSpyOnce={false} />
+          <span className='count'>≈ {(state.docsTotal ?? 0).toLocaleString('ru-RU')}</span>
         </div>
         <div className='signed-count'>
           <div className='wrapper'>
@@ -37,7 +59,7 @@ function App() {
             </svg>
             <span className='title'>Всего подписано</span>
           </div>
-          <CountUp className='count' end={5421} duration={2} separator=" " prefix="≈ " enableScrollSpy scrollSpyOnce={false} />
+          <span className='count'>≈ {(state.signedCount ?? 0).toLocaleString('ru-RU')}</span>
         </div>
         <div className='unsigned-count'>
           <div className='wrapper'>
@@ -46,7 +68,7 @@ function App() {
             </svg>
             <span className='title'>Не подписано</span>
           </div>
-          <CountUp className='count' end={541} duration={2} separator=" " prefix="≈ " enableScrollSpy scrollSpyOnce={false} />
+          <span className='count'>≈ {(state.unsignedCount ?? 0).toLocaleString('ru-RU')}</span>
         </div>
         <div className='bot-activity-rate'>
           <div className='wrapper'>
@@ -57,7 +79,7 @@ function App() {
               Активность агента
             </span>
           </div>
-          <CountUp className='count' end={54371} duration={2} separator=" " prefix="≈ " enableScrollSpy scrollSpyOnce={false} />
+          <span className='count'>≈ {(state.botActivityRate ?? 0).toLocaleString('ru-RU')}</span>
         </div>
       </div>
     </div>
